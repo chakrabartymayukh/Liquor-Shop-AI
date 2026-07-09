@@ -1,0 +1,108 @@
+{
+  "name": "Inventory Service v1.0",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2e3db41c-202f-49aa-9aa5-cd774dcca6a5",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fc018c0a-2c62-41ec-bd47-638bae4c938a",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const filters = $(\"When Executed by Another Workflow\").first().json;\n\nconst inventory = $input.all();\n\nconst results = inventory.filter(item => {\n    const p = item.json;\n\n    if (\n        filters.category &&\n        (p.Category || \"\").toLowerCase() !== filters.category.toLowerCase()\n    ) {\n        return false;\n    }\n\n    if (\n        filters.brand &&\n        (p.Brand || \"\").toLowerCase() !== filters.brand.toLowerCase()\n    ) {\n        return false;\n    }\n\n    if (\n        filters.max_price &&\n        Number(p.Price) > Number(filters.max_price)\n    ) {\n        return false;\n    }\n\n    if (\n        filters.size &&\n        (p.Size || \"\").toLowerCase() !== filters.size.toLowerCase()\n    ) {\n        return false;\n    }\n\n    if (filters.premium === true) {\n        if ((p.Premium || \"\").toLowerCase() !== \"yes\") {\n            return false;\n        }\n    }\n\n    if (filters.in_stock_only) {\n        if (Number(p.Stock || 0) <= 0) {\n            return false;\n        }\n    }\n\n    return true;\n});\n\n// Preserve customer information\nreturn results.map(item => ({\n    json: {\n        customer_email: filters.customer_email,\n        customer_query: filters.customer_query,\n        ...item.json\n    }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d45eb9ae-f692-4169-b3c7-7e75c5a6fee0",
+      "name": "Filter Inventory"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/Inventory.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d04ff507-2be6-43c6-941d-0f1e0100058f",
+      "name": "Extract Inventory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Extract Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Filter Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Inventory": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ee718e35-c06b-454e-8eb4-f33b1ef6f576",
+  "meta": {
+    "instanceId": "00f6ec639cf53d3c5fae0de6dae51faf8075805618044514fc780fb14174775a"
+  },
+  "nodeGroups": [],
+  "id": "9znieuvlTY8xqMdT",
+  "tags": []
+}
